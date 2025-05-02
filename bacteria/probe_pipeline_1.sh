@@ -2,12 +2,12 @@
 
 # === Configuration ===
 WD_SEQ="/Users/raburajab/Documents/microbiome/sequences"
-WD_SCRIPTS="/Users/raburajab/Documents/microbiome/visium-probe-microbiome"
+WD_SCRIPTS="/Users/raburajab/Documents/microbiome/visium_microbiome/bacteria"
 
-FASTA_DIR="$WD_SEQ/FASTA_NCBI"
-TSV_FILE="$WD_SEQ/species_accessions_all.tsv"
-CONSENSUS_DIR="$WD_SEQ/species_consensus_FASTAs"
-ALL_PROBE_DIR="$WD_SEQ/probe_outputs/all_probes"
+FASTA_DIR="$WD_SEQ/FASTA_Bacteria_NCBI"
+TSV_FILE="$WD_SEQ/bacteria_accessions_all.tsv"
+CONSENSUS_DIR="$WD_SEQ/FASTA_Bacteria_consensus"
+ALL_PROBE_DIR="$WD_SEQ/probe_outputs/bacteria_probes"
 
 SCRIPT_CONSENSUS="$WD_SCRIPTS/1_consensus_species_seq.py"
 SCRIPT_DESIGN="$WD_SCRIPTS/2_design_probes.py"
