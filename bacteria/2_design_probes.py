@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 """
-design_probes.py — updated Visium probe design script
+design_probes.py — Visium probe design script for bacterial consensus sequences
 
 - Takes in FASTA(s) from consensus sequences
 - Filters for GC content, homopolymer length, and LHS 'T'
 - Respects 50 nt spacing between probes
-- Writes to a specified output directory
+- Outputs TSV (and optional FASTA/IDT formats) with probe IDs like: Bacillus_probe3_lhs
 """
 
 from collections import Counter, defaultdict
@@ -32,15 +32,14 @@ ALLOWED_NUCS = set("AGTC")
 @click.option('--output_dir', required=True, help='Directory to write probe TSVs to')
 @click.option('--output_fasta', is_flag=True, help='Write probe hybridization regions as FASTA')
 @click.option('--idt', is_flag=True, help='Write probes formatted for IDT ordering')
-@click.option('--species_name', default=None, help='Optional species tag for naming output')
+@click.option('--species_name', required=True, help='Species name for output tagging (e.g. Bacillus)')
 @click.argument('target_fasta')
 def main(target_fasta, output_dir, output_fasta, idt, species_name):
     target_path = Path(target_fasta)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    tag = species_name or target_path.stem
-    output_file = output_dir / f"{tag}_probes.tsv"
+    output_file = output_dir / f"{species_name}_probes.tsv"
 
     cand_probes = defaultdict(list)
     for record in SeqIO.parse(target_path, "fasta"):
@@ -68,28 +67,32 @@ def main(target_fasta, output_dir, output_fasta, idt, species_name):
     probes = [p for probe_list in keep_probes.values() for p in probe_list]
 
     if not probes:
-        print(f"⚠️  {tag}: No valid probes generated.")
+        print(f"⚠️  {species_name}: No valid probes generated.")
         return
 
+    # === Write output ===
     if output_fasta:
         with open(output_file.with_suffix('.fa'), 'w') as out:
             for i, p in enumerate(probes, 1):
-                out.write(f">{tag}_lhs_{i}\n{p.lhs}\n")
-                out.write(f">{tag}_rhs_{i}\n{p.rhs}\n")
+                base = f"{species_name}_probe{i}"
+                out.write(f">{base}_lhs\n{p.lhs}\n")
+                out.write(f">{base}_rhs\n{p.rhs}\n")
     elif idt:
         with open(output_file.with_suffix('.idt.tsv'), 'w') as out:
             out.write("#id\tsequence\tscale\tpurification\n")
             for i, p in enumerate(probes, 1):
-                out.write(f"lhs-{i}\t{PROBE_LHS + p.lhs}\t{IDT_SCALE}\t{IDT_PURIF}\n")
-                out.write(f"rhs-{i}\t{MOD_RHS + p.rhs + PROBE_RHS}\t{IDT_SCALE}\t{IDT_PURIF}\n")
+                base = f"{species_name}_probe{i}"
+                out.write(f"{base}_lhs\t{PROBE_LHS + p.lhs}\t{IDT_SCALE}\t{IDT_PURIF}\n")
+                out.write(f"{base}_rhs\t{MOD_RHS + p.rhs + PROBE_RHS}\t{IDT_SCALE}\t{IDT_PURIF}\n")
     else:
         with open(output_file, 'w') as out:
             out.write("#id\tpos\thyb_region\tprobe\n")
             for i, p in enumerate(probes, 1):
-                out.write(f"lhs-{i}\t{p.lhs_start}\t{p.lhs}\t{PROBE_LHS + p.lhs}\n")
-                out.write(f"rhs-{i}\t{p.lhs_start}\t{p.rhs}\t{MOD_RHS + p.rhs + PROBE_RHS}\n")
+                base = f"{species_name}_probe{i}"
+                out.write(f"{base}_lhs\t{p.lhs_start}\t{p.lhs}\t{PROBE_LHS + p.lhs}\n")
+                out.write(f"{base}_rhs\t{p.lhs_start}\t{p.rhs}\t{MOD_RHS + p.rhs + PROBE_RHS}\n")
 
-    print(f"✅ {tag}: {len(probes)} probes written to {output_file}")
+    print(f"✅ {species_name}: {len(probes)} probes written to {output_file}")
 
 class ProbePair:
     def __init__(self, lhs, rhs, pos):

@@ -2,57 +2,63 @@
 
 import pandas as pd
 from pathlib import Path
-from Bio.Seq import Seq
 import click
+import re
 
 @click.command()
 @click.option('--input_dir', required=True, help="Directory with *_probes.tsv files")
-@click.option('--output_file', required=True, help="TSV with combined hybrid sequences")
-@click.option('--output_fasta', required=True, help="FASTA file of hybrid-only probes")
-def main(input_dir, output_file, output_fasta):
+@click.option('--output_excel', required=True, help="Excel file with one sheet per genus")
+@click.option('--output_fasta_dir', required=True, help="Directory to store FASTA files per genus")
+def main(input_dir, output_excel, output_fasta_dir):
     input_dir = Path(input_dir)
-    all_combined = []
-    fasta_lines = []
+    output_fasta_dir = Path(output_fasta_dir)
+    output_fasta_dir.mkdir(parents=True, exist_ok=True)
+    excel_writer = pd.ExcelWriter(output_excel, engine='xlsxwriter')
+
+    genus_groups = {}
 
     for file in sorted(input_dir.glob("*_probes.tsv")):
-        df = pd.read_csv(file, sep='\t', header=0)
-        df.columns = df.columns.str.lstrip('#')  # Strip '#' from column names
+        df = pd.read_csv(file, sep='\t')
+        df.columns = df.columns.str.lstrip('#')
+        species = file.stem.replace("_probes", "")
+        genus = species.split("_")[0]
 
-        species = file.stem.replace("_probes", "").replace(" ", "_")
+        # Extract probe number and tag (lhs/rhs)
+        pattern = r"^(?P<species>[A-Za-z0-9_]+)_probe(?P<number>\d+)_(?P<tag>lhs|rhs)$"
+        extracted = df['id'].str.extract(pattern)
+        df = pd.concat([df, extracted], axis=1)
 
-        lhs_df = df[df['id'].str.startswith('lhs')].copy()
-        rhs_df = df[df['id'].str.startswith('rhs')].copy()
+        lhs_df = df[df['tag'] == 'lhs'].copy()
+        rhs_df = df[df['tag'] == 'rhs'].copy()
 
         lhs_df['hyb_region'] = lhs_df['hyb_region'].str.upper()
         rhs_df['hyb_region'] = rhs_df['hyb_region'].str.upper()
 
-        # Merge LHS and RHS by position
-        merged = pd.merge(lhs_df, rhs_df, on='pos', suffixes=('_lhs', '_rhs'))
+        merged = pd.merge(lhs_df, rhs_df, on=['species', 'number'], suffixes=('_lhs', '_rhs'))
+        merged['probe_id'] = merged['species'] + "_probe" + merged['number']
         merged['combined_probe'] = merged['hyb_region_lhs'] + merged['hyb_region_rhs']
-        merged['species'] = species
 
-        # FASTA-formatted column
-        merged['fasta_entry'] = [
-            f">{species}_probe{i+1}\n{seq}"
-            for i, seq in enumerate(merged['combined_probe'])
-        ]
+        # Add to genus group
+        genus_groups.setdefault(genus, []).append(merged)
 
-        all_combined.append(merged)
-        for i, row in merged.iterrows():
-            fasta_lines.append(f">{species}_probe{i+1}")
-            fasta_lines.append(row['combined_probe'])
+    # Write Excel and FASTAs
+    for genus, dfs in genus_groups.items():
+        df_all = pd.concat(dfs, ignore_index=True)
+        df_all['pos'] = df_all['pos_lhs']
 
-    # Output TSV
-    combined_df = pd.concat(all_combined, ignore_index=True)
-    combined_df = combined_df[['species', 'id_lhs', 'id_rhs', 'pos', 'hyb_region_lhs', 'hyb_region_rhs', 'combined_probe', 'fasta_entry']]
-    combined_df.to_csv(output_file, sep='\t', index=False)
+        # Excel columns
+        excel_df = df_all[['probe_id', 'pos', 'hyb_region_lhs', 'hyb_region_rhs', 'combined_probe']]
+        excel_df.to_excel(excel_writer, sheet_name=genus[:31], index=False)
 
-    # Output FASTA
-    with open(output_fasta, "w") as f:
-        f.write("\n".join(fasta_lines) + "\n")
+        # FASTA
+        fasta_path = output_fasta_dir / f"{genus}.fa"
+        with open(fasta_path, 'w') as f:
+            for _, row in df_all.iterrows():
+                f.write(f">{row['probe_id']}\n{row['combined_probe']}\n")
 
-    print(f"✅ Combined TSV written: {output_file}")
-    print(f"✅ FASTA file written:   {output_fasta}")
+    excel_writer.close()
+    print(f"✅ Excel file written: {output_excel}")
+    print(f"✅ FASTA files written to: {output_fasta_dir}")
 
 if __name__ == "__main__":
     main()

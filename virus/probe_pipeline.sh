@@ -6,14 +6,14 @@ WD_SCRIPTS="/Users/raburajab/Documents/microbiome/visium_microbiome/virus"
 
 FASTA_DIR="$WD_SEQ/FASTA_Virus_CDS"
 ALL_PROBE_DIR="$WD_SEQ/probe_outputs/virus_probes"
-COMBINED_EXCEL="$WD_SEQ/probe_outputs/virus_all_combined.xlsx"
-COMBINED_FASTA="$WD_SEQ/probe_outputs/virus_all_probes.fa"
+COMBINED_EXCEL="$WD_SEQ/probe_outputs/virus_probes.xlsx"
+FASTA_DIR_OUT="$WD_SEQ/probe_outputs/virus_fasta"
 
 SCRIPT_DESIGN="$WD_SCRIPTS/1_design_probes.py"
 SCRIPT_COMBINE="$WD_SCRIPTS/2_combine_probes.py"
 
-# === Create output directory ===
-mkdir -p "$ALL_PROBE_DIR"
+# === Create output directories ===
+mkdir -p "$ALL_PROBE_DIR" "$FASTA_DIR_OUT"
 
 # === Step 1: Design probes from viral FASTAs ===
 echo "🧪 [Step 1] Designing probes from viral FASTAs..."
@@ -28,11 +28,11 @@ for fasta in "$FASTA_DIR"/*.fa; do
 done
 
 # === Step 2: Combine and format probes ===
-echo "📦 [Step 2] Combining probe files into TSV and FASTA..."
+echo "📦 [Step 2] Combining probe files into Excel + one FASTA per virus..."
 python "$SCRIPT_COMBINE" \
   --input_dir "$ALL_PROBE_DIR" \
   --output_excel "$COMBINED_EXCEL" \
-  --output_fasta "$COMBINED_FASTA"
+  --output_fasta_dir "$FASTA_DIR_OUT"
 
 # === Completion ===
 echo "✅ Full virus pipeline complete: FASTAs ➜ Probes ➜ Combined Output"

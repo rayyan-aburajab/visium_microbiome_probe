@@ -1,20 +1,24 @@
 #!/bin/bash
 
-# === Step 3: Combine hybrid-only probes and generate FASTA ===
-echo "🔬 [Step 3] Combining probe hybrid regions and writing FASTA..."
+# === Configuration ===
+WD_SEQ="/Users/raburajab/Documents/microbiome/sequences"
+WD_SCRIPTS="/Users/raburajab/Documents/microbiome/visium_microbiome/bacteria"
 
-# Paths
-ALL_PROBE_DIR="/Users/raburajab/Documents/microbiome/sequences/probe_outputs/bacteria_probes"
+ALL_PROBE_DIR="$WD_SEQ/probe_outputs/bacteria_probes"
+OUT_DIR="$WD_SEQ/probe_outputs"
+FASTA_DIR="$OUT_DIR/bacteria_fasta"
+SCRIPT_COMBINE="$WD_SCRIPTS/3_combine_probes.py"
 
-SCRIPT_COMBINE="/Users/raburajab/Documents/microbiome/visium-probe-microbiome/3_combine_probes.py"
+COMBINED_EXCEL="$OUT_DIR/bacteria_probes.xlsx"
 
-COMBINED_TSV="/Users/raburajab/Documents/microbiome/sequences/probe_outputs/bacteria_probes.tsv"
-COMBINED_FASTA="/Users/raburajab/Documents/microbiome/sequences/probe_outputs/bacteria_probes.fasta"
+# === Step 3: Combine hybrid-only probes and generate FASTA + Excel ===
+echo "🔬 [Step 3] Combining probe hybrid regions and writing FASTA + Excel..."
 
-# Run combination script
+mkdir -p "$FASTA_DIR"
+
 python "$SCRIPT_COMBINE" \
   --input_dir "$ALL_PROBE_DIR" \
-  --output_file "$COMBINED_TSV" \
-  --output_fasta "$COMBINED_FASTA"
+  --output_excel "$COMBINED_EXCEL" \
+  --output_fasta_dir "$FASTA_DIR"
 
-echo "✅ Step 3 complete: Hybrid probe file and FASTA created"
+echo "✅ Step 3 complete: Excel + FASTA files created"

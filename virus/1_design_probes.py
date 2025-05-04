@@ -7,6 +7,7 @@ from Bio import SeqIO
 from pathlib import Path
 import re
 
+# Constants
 PROBE_LHS = 'CCTTGGCACCCGAGAATTCCA'
 PROBE_RHS = 'A' * 30
 MOD_RHS   = '/5Phos/'
@@ -23,34 +24,22 @@ ALLOWED_NUCS = set("AGTC")
 @click.option('--output_dir', required=True, help='Directory to write probe TSVs to')
 @click.option('--output_fasta', is_flag=True, help='Write probe hybridization regions as FASTA')
 @click.option('--idt', is_flag=True, help='Write probes formatted for IDT ordering')
-@click.option('--species_name', default=None, help='Optional species tag for naming output')
+@click.option('--species_name', required=True, help='Species or virus name used in probe IDs')
 @click.argument('target_fasta')
 def main(target_fasta, output_dir, output_fasta, idt, species_name):
     target_path = Path(target_fasta)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    tag = species_name or target_path.stem
-    output_file = output_dir / f"{tag}_probes.tsv"
+    output_file = output_dir / f"{species_name}_probes.tsv"
 
     cand_probes = defaultdict(list)
-    region_tags = {}
 
     for record in SeqIO.parse(target_path, "fasta"):
+        gene_match = re.search(r'\[gene=([^\]]+)\]', record.description)
+        gene = gene_match.group(1) if gene_match else "unknown"
+
         rc_seq = record.seq.reverse_complement().upper()
-
-        # Extract metadata from FASTA header
-        header = record.description
-        gene_match = re.search(r'\[gene=([^\]]+)\]', header)
-        protein_match = re.search(r'\[protein_id=([^\]]+)\]', header)
-        location_match = re.search(r'\[location=([^\]]+)\]', header)
-
-        gene = gene_match.group(1) if gene_match else "unknown_gene"
-        protein = protein_match.group(1) if protein_match else "unknown_protein"
-        location = location_match.group(1) if location_match else "unknown_location"
-
-        region_tag = f"{gene}_{protein}_{location}"
-        region_tags[record.id] = region_tag
 
         for pos, lhs, rhs in gen_probe_pairs(rc_seq):
             if not _check_lhs_seq(lhs):
@@ -60,54 +49,53 @@ def main(target_fasta, output_dir, output_fasta, idt, species_name):
             if not all(map(_check_homopolymer, [lhs, rhs])):
                 continue
 
-            cand_probes[record.id].append(ProbePair(lhs, rhs, pos))
+            cand_probes[(record.id, gene)].append(ProbePair(lhs, rhs, pos, gene))
 
     keep_probes = defaultdict(list)
-    for record_id, probes in cand_probes.items():
+    for (record_id, gene), probes in cand_probes.items():
         last_pos = None
         for probe in probes:
             if last_pos and abs(probe.lhs_start - last_pos) < (PROBE_LEN * 2):
                 continue
-            keep_probes[record_id].append(probe)
+            keep_probes[(record_id, gene)].append(probe)
             last_pos = probe.lhs_start
 
     probes = [p for probe_list in keep_probes.values() for p in probe_list]
 
     if not probes:
-        print(f"⚠️  {tag}: No valid probes generated.")
+        print(f"⚠️  {species_name}: No valid probes generated.")
         return
 
+    # Write outputs
     if output_fasta:
         with open(output_file.with_suffix('.fa'), 'w') as out:
-            for record_id, probe_list in keep_probes.items():
-                region_tag = region_tags.get(record_id, record_id)
-                for i, p in enumerate(probe_list, 1):
-                    out.write(f">{region_tag}_lhs_{i}\n{p.lhs}\n")
-                    out.write(f">{region_tag}_rhs_{i}\n{p.rhs}\n")
+            for i, p in enumerate(probes, 1):
+                base = f"{species_name}_{p.gene}_probe{i}"
+                out.write(f">{base}_lhs\n{p.lhs}\n")
+                out.write(f">{base}_rhs\n{p.rhs}\n")
     elif idt:
         with open(output_file.with_suffix('.idt.tsv'), 'w') as out:
             out.write("#id\tsequence\tscale\tpurification\n")
-            for record_id, probe_list in keep_probes.items():
-                region_tag = region_tags.get(record_id, record_id)
-                for i, p in enumerate(probe_list, 1):
-                    out.write(f"{region_tag}_lhs-{i}\t{PROBE_LHS + p.lhs}\t{IDT_SCALE}\t{IDT_PURIF}\n")
-                    out.write(f"{region_tag}_rhs-{i}\t{MOD_RHS + p.rhs + PROBE_RHS}\t{IDT_SCALE}\t{IDT_PURIF}\n")
+            for i, p in enumerate(probes, 1):
+                base = f"{species_name}_{p.gene}_probe{i}"
+                out.write(f"{base}_lhs\t{PROBE_LHS + p.lhs}\t{IDT_SCALE}\t{IDT_PURIF}\n")
+                out.write(f"{base}_rhs\t{MOD_RHS + p.rhs + PROBE_RHS}\t{IDT_SCALE}\t{IDT_PURIF}\n")
     else:
         with open(output_file, 'w') as out:
             out.write("#id\tpos\thyb_region\tprobe\n")
-            for record_id, probe_list in keep_probes.items():
-                region_tag = region_tags.get(record_id, record_id)
-                for i, p in enumerate(probe_list, 1):
-                    out.write(f"{region_tag}_lhs-{i}\t{p.lhs_start}\t{p.lhs}\t{PROBE_LHS + p.lhs}\n")
-                    out.write(f"{region_tag}_rhs-{i}\t{p.lhs_start}\t{p.rhs}\t{MOD_RHS + p.rhs + PROBE_RHS}\n")
+            for i, p in enumerate(probes, 1):
+                base = f"{species_name}_{p.gene}_probe{i}"
+                out.write(f"{base}_lhs\t{p.lhs_start}\t{p.lhs}\t{PROBE_LHS + p.lhs}\n")
+                out.write(f"{base}_rhs\t{p.lhs_start}\t{p.rhs}\t{MOD_RHS + p.rhs + PROBE_RHS}\n")
 
-    print(f"✅ {tag}: {len(probes)} probes written to {output_file}")
+    print(f"✅ {species_name}: {len(probes)} probes written to {output_file}")
 
 class ProbePair:
-    def __init__(self, lhs, rhs, pos):
+    def __init__(self, lhs, rhs, pos, gene):
         self.lhs = str(lhs)
         self.rhs = str(rhs)
         self.lhs_start = pos
+        self.gene = gene
 
 def gen_probe_pairs(seq):
     for i in range(len(seq)):
