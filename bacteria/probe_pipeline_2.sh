@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# === Configuration ===
 WD_SEQ="/Users/raburajab/Documents/microbiome/sequences"
 WD_SCRIPTS="/Users/raburajab/Documents/microbiome/visium_microbiome/bacteria"
 
@@ -11,8 +10,7 @@ SCRIPT_COMBINE="$WD_SCRIPTS/3_combine_probes.py"
 
 COMBINED_EXCEL="$OUT_DIR/bacteria_probes.xlsx"
 
-# === Step 3: Combine hybrid-only probes and generate FASTA + Excel ===
-echo "🔬 [Step 3] Combining probe hybrid regions and writing FASTA + Excel..."
+echo "[Step 3] Writing FASTA + Excel..."
 
 mkdir -p "$FASTA_DIR"
 
@@ -21,4 +19,4 @@ python "$SCRIPT_COMBINE" \
   --output_excel "$COMBINED_EXCEL" \
   --output_fasta_dir "$FASTA_DIR"
 
-echo "✅ Step 3 complete: Excel + FASTA files created"
+echo "✅ Step 3 complete"

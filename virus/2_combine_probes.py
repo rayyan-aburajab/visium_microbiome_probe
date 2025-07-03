@@ -38,13 +38,14 @@ def main(input_dir, output_excel, output_fasta_dir):
         merged = pd.merge(lhs_df, rhs_df,
                           on=['virus', 'gene', 'probe_num'],
                           suffixes=('_lhs', '_rhs'))
-
+        
+        merged['protein'] = merged['protein_lhs']
         merged['combined_probe'] = merged['hyb_region_lhs'] + merged['hyb_region_rhs']
         merged['probe_id'] = merged['virus'] + "_" + merged['gene'] + "_" + merged['probe_num']
 
         # Excel sheet (per virus)
         sheet_df = merged[[
-            'probe_id', 'gene', 'pos_lhs',
+            'probe_id', 'gene', 'protein', 'pos_lhs',
             'hyb_region_lhs', 'hyb_region_rhs', 'combined_probe'
         ]].rename(columns={'pos_lhs': 'pos'})
         sheet_df.to_excel(excel_writer, sheet_name=virus[:31], index=False)
@@ -60,8 +61,8 @@ def main(input_dir, output_excel, output_fasta_dir):
             f.write("\n".join(fasta_lines) + "\n")
 
     excel_writer.close()
-    print(f"✅ Excel file written: {output_excel}")
-    print(f"✅ Per-virus FASTA files written to: {output_fasta_dir}")
+    print(f"Excel file written: {output_excel}")
+    print(f"Per-virus FASTA files written to: {output_fasta_dir}")
 
 if __name__ == "__main__":
     main()

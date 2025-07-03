@@ -7,7 +7,6 @@ from Bio import SeqIO
 from pathlib import Path
 import re
 
-# Constants
 PROBE_LHS = 'CCTTGGCACCCGAGAATTCCA'
 PROBE_RHS = 'A' * 30
 MOD_RHS   = '/5Phos/'
@@ -38,6 +37,9 @@ def main(target_fasta, output_dir, output_fasta, idt, species_name):
     for record in SeqIO.parse(target_path, "fasta"):
         gene_match = re.search(r'\[gene=([^\]]+)\]', record.description)
         gene = gene_match.group(1) if gene_match else "unknown"
+        
+        protein_match = re.search(r'\[protein=([^\]]+)\]', record.description)
+        protein = protein_match.group(1) if protein_match else "unknown"
 
         rc_seq = record.seq.reverse_complement().upper()
 
@@ -49,15 +51,16 @@ def main(target_fasta, output_dir, output_fasta, idt, species_name):
             if not all(map(_check_homopolymer, [lhs, rhs])):
                 continue
 
-            cand_probes[(record.id, gene)].append(ProbePair(lhs, rhs, pos, gene))
+            cand_probes[(record.id, gene, protein)].append(ProbePair(lhs, rhs, pos, gene, protein))
+
 
     keep_probes = defaultdict(list)
-    for (record_id, gene), probes in cand_probes.items():
+    for (record_id, gene, protein), probes in cand_probes.items():
         last_pos = None
         for probe in probes:
             if last_pos and abs(probe.lhs_start - last_pos) < (PROBE_LEN * 2):
                 continue
-            keep_probes[(record_id, gene)].append(probe)
+            keep_probes[(record_id, gene, protein)].append(probe)
             last_pos = probe.lhs_start
 
     probes = [p for probe_list in keep_probes.values() for p in probe_list]
@@ -82,20 +85,21 @@ def main(target_fasta, output_dir, output_fasta, idt, species_name):
                 out.write(f"{base}_rhs\t{MOD_RHS + p.rhs + PROBE_RHS}\t{IDT_SCALE}\t{IDT_PURIF}\n")
     else:
         with open(output_file, 'w') as out:
-            out.write("#id\tpos\thyb_region\tprobe\n")
+            out.write("#id\tpos\thyb_region\tprobe\tprotein\n")
             for i, p in enumerate(probes, 1):
                 base = f"{species_name}_{p.gene}_probe{i}"
-                out.write(f"{base}_lhs\t{p.lhs_start}\t{p.lhs}\t{PROBE_LHS + p.lhs}\n")
-                out.write(f"{base}_rhs\t{p.lhs_start}\t{p.rhs}\t{MOD_RHS + p.rhs + PROBE_RHS}\n")
+                out.write(f"{base}_lhs\t{p.lhs_start}\t{p.lhs}\t{PROBE_LHS + p.lhs}\t{p.protein}\n")
+                out.write(f"{base}_rhs\t{p.lhs_start}\t{p.rhs}\t{MOD_RHS + p.rhs + PROBE_RHS}\t{p.protein}\n")
 
     print(f"✅ {species_name}: {len(probes)} probes written to {output_file}")
 
 class ProbePair:
-    def __init__(self, lhs, rhs, pos, gene):
+    def __init__(self, lhs, rhs, pos, gene, protein):
         self.lhs = str(lhs)
         self.rhs = str(rhs)
         self.lhs_start = pos
         self.gene = gene
+        self.protein = protein
 
 def gen_probe_pairs(seq):
     for i in range(len(seq)):

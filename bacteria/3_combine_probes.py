@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Combines probes from each TSV into one Excel file, each genus a different tab
+# Also creates FASTA file
+
 import pandas as pd
 from pathlib import Path
 import click
@@ -41,7 +44,6 @@ def main(input_dir, output_excel, output_fasta_dir):
         # Add to genus group
         genus_groups.setdefault(genus, []).append(merged)
 
-    # Write Excel and FASTAs
     for genus, dfs in genus_groups.items():
         df_all = pd.concat(dfs, ignore_index=True)
         df_all['pos'] = df_all['pos_lhs']

@@ -1,4 +1,4 @@
-# build_species_consensus.py — updated to resolve Ns using majority vote
+#!/usr/bin/env python3
 
 import os
 import subprocess
@@ -50,10 +50,10 @@ def main(fasta_dir, tsv_file, output_dir, mafft_path):
                         SeqIO.write(record, out, 'fasta')
 
             # Align with MAFFT
-            print(f"🔬 Aligning {species_tag} with MAFFT...")
+            print(f"Aligning {species_tag} with MAFFT...")
             result = subprocess.run([mafft_path, '--auto', combined_fasta], capture_output=True, text=True)
             if result.returncode != 0:
-                print(f"❌ MAFFT failed for {species_tag}")
+                print(f"MAFFT failed for {species_tag}")
                 print(result.stderr)
                 continue
 
@@ -61,7 +61,7 @@ def main(fasta_dir, tsv_file, output_dir, mafft_path):
                 out.write(result.stdout)
 
             # Generate consensus
-            print(f"🧬 Building consensus for {species_tag}...")
+            print(f"Building consensus for {species_tag}...")
             try:
                 alignment = AlignIO.read(aligned_fasta, 'fasta')
                 summary = AlignInfo.SummaryInfo(alignment)
@@ -78,10 +78,10 @@ def main(fasta_dir, tsv_file, output_dir, mafft_path):
 
                 record = SeqRecord(Seq(consensus), id=f"{species_tag}_consensus", description="")
                 SeqIO.write(record, consensus_fasta, "fasta")
-                print(f"✅ Consensus written to: {consensus_fasta}")
+                print(f"Consensus written to: {consensus_fasta}")
 
             except Exception as e:
-                print(f"⚠️  Failed to generate consensus for {species_tag}: {e}")
+                print(f"Failed to generate consensus for {species_tag}: {e}")
                 continue
 
 if __name__ == '__main__':

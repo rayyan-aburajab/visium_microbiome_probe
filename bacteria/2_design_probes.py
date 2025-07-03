@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 
-"""
-design_probes.py — Visium probe design script for bacterial consensus sequences
-
-- Takes in FASTA(s) from consensus sequences
-- Filters for GC content, homopolymer length, and LHS 'T'
-- Respects 50 nt spacing between probes
-- Outputs TSV (and optional FASTA/IDT formats) with probe IDs like: Bacillus_probe3_lhs
-"""
-
 from collections import Counter, defaultdict
 import click
 import rle
 from Bio import SeqIO
 from pathlib import Path
 
-# Constants
 PROBE_LHS = 'CCTTGGCACCCGAGAATTCCA'
 PROBE_RHS = 'A' * 30
 MOD_RHS   = '/5Phos/'
@@ -92,7 +82,7 @@ def main(target_fasta, output_dir, output_fasta, idt, species_name):
                 out.write(f"{base}_lhs\t{p.lhs_start}\t{p.lhs}\t{PROBE_LHS + p.lhs}\n")
                 out.write(f"{base}_rhs\t{p.lhs_start}\t{p.rhs}\t{MOD_RHS + p.rhs + PROBE_RHS}\n")
 
-    print(f"✅ {species_name}: {len(probes)} probes written to {output_file}")
+    print(f"{species_name}: {len(probes)} probes written to {output_file}")
 
 class ProbePair:
     def __init__(self, lhs, rhs, pos):
