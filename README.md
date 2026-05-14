@@ -1,7 +1,6 @@
 # Custom Probe-Based Spatial Transcriptomics Enables Microbiome Detection in FFPE Colorectal Cancer Tissue
 
 This repository contains the probe design pipeline supporting Aburajab et al., City of Hope.
-This repository contains scripts for designing custom 16S rRNA split-ligation probe panels targeting oral and gut microbiome species for use with the 10x Genomics Visium CytAssist platform.
 
 ## Overview
 
