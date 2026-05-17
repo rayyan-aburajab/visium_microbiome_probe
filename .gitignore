@@ -8,5 +8,5 @@ data/probes/fasta/*
 data/blast/*
 data/qc/*
 data/reference/*
-data/16S_refseq/*
+16S_refseq/*
 .DS_Store
