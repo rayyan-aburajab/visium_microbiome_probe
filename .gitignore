@@ -1,2 +1,12 @@
 original_scripts/
+data/FASTA_Bacteria_NCBI/*
+data/FASTA_Bacteria_consensus/aligned*
+data/FASTA_Bacteria_consensus/combined*
+data/FASTA_Bacteria_consensus/consensus*
+data/probes/tsv/*
+data/probes/fasta/*
+data/blast/*
+data/qc/*
+data/reference/*
+data/16S_refseq/*
 .DS_Store
