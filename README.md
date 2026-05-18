@@ -17,7 +17,7 @@ conda activate microbiome
 
 ## Repository Structure
 
-​```
+```
 visium_microbiome/
 ├── scripts/
 │   ├── 1_consensus_species_seq.py   # Aligns NCBI FASTAs, generates per-species consensus sequences
@@ -52,14 +52,16 @@ visium_microbiome/
 
 ### accessions.tsv
 Tab-separated file mapping species to NCBI accession numbers. Users should compile their own list based on target species of interest:
-​```
+​
+```
 Fusobacterium nucleatum    NR_074412.1 NR_113198.1 NR_117287.1
 Bacteroides fragilis    NR_112936.1 NR_074784.2 NR_112141.1 NR_119164.1
 ​```
 
 ### selected_probes.tsv
 Tab-separated file created by the user after reviewing BLAST results. One row per selected probe:
-​```
+
+```
 original_probe_id    new_probe_id    gene_name    gene_symbol    composite_group
 Fusobacterium_nucleatum_consensus_probe1    Fusobacterium_probe1    Fusobacterium    FUSO    1
 Bacteroides_fragilis_consensus_probe1    Bacteroides_probe1    Bacteroides    BACTO    1
