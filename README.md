@@ -7,12 +7,12 @@ This repository contains the probe design pipeline supporting Aburajab et al., C
 The pipeline is designed to create custom 16S rRNA split-ligation probe panels targeting microbiome species for use with the 10x Genomics Visium CytAssist platform. 
 
 The pipeline is organized into two sequential stages:
-- The first takes NCBI 16S rRNA FASTA sequences and an accessions file as input, generates per-species consensus sequences via multiple sequence alignment with MAFFT, designs split-ligation probe pairs passing GC content, homopolymer, and junction QC filters, and validates candidate probes by BLAST against the NCBI 16S rRNA RefSeq database. 
-- The second stage takes a user-curated probe selection file, runs secondary QC including melting temperature, hairpin, homodimer, heterodimer, and near-duplicate checks, generates a probe ordering file with appended handle sequences, and produces FASTA, GTF, and metadata files for appending to an existing Visium CytAssist reference.
+- The first takes NCBI 16S rRNA FASTA sequences and an accessions file as input, generates per-species consensus sequences via multiple sequence alignment with MAFFT, designs split-ligation probe pairs passing Visium probe requirements, and validates candidate probes by BLAST against the NCBI 16S rRNA RefSeq database. 
+- The second stage takes a user-curated probe selection file, runs secondary QC and near-duplicate checks, generates a probe file with appended handle sequences, and produces FASTA, GTF, and metadata files for appending to an existing Visium reference.
 
 ## Dependencies
 
-A conda environment file is provided to reproduce the exact environment used:
+A conda environment file is provided:
 
 ```bash
 conda env create -f environment.yml
@@ -105,7 +105,7 @@ Streptococcus_gallolyticus_consensus_probe14	Streptococcus_probe2	Streptococcus	
 
 ## Downloading the 16S rRNA BLAST Database
 
-NCBI BLAST+ is installed as part of the conda environment. The 16S rRNA RefSeq database must be downloaded separately into the `16S_refseq/` directory:
+NCBI BLAST+ is installed as part of the conda environment. The 16S rRNA RefSeq database should be downloaded into the `16S_refseq/` directory:
 
 ```bash
 cd 16S_refseq/
@@ -114,7 +114,7 @@ update_blastdb.pl --decompress 16S_ribosomal_RNA
 
 ## Downloading NCBI FASTAs
 
-Accession numbers for target species should be compiled by the user and listed in `scripts/accessions.txt`. To download:
+Accession numbers for target species should be compiled by the user and listed in `inputs/accessions.txt`. To download:
 
 ```bash
 cd scripts/
