@@ -1,7 +1,7 @@
 #!/bin/bash
 DATA_DIR="$WD_SEQ/data"
 
-SELECTION="$DATA_DIR/selected_probes.tsv"
+SELECTION="$WD_SEQ/inputs/selected_probes.tsv"
 PROBE_DIR="$DATA_DIR/probes/tsv"
 QC_DIR="$DATA_DIR/qc"
 REF_DIR="$DATA_DIR/reference"

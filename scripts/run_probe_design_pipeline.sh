@@ -2,7 +2,7 @@
 DATA_DIR="$WD_SEQ/data"
 
 FASTA_DIR="$DATA_DIR/FASTA_Bacteria_NCBI"
-TSV_FILE="$DATA_DIR/accessions.tsv"
+TSV_FILE="$WD_SEQ/inputs/accessions.tsv"
 CONSENSUS_DIR="$DATA_DIR/FASTA_Bacteria_consensus"
 PROBE_DIR="$DATA_DIR/probes/tsv"
 PROBE_FASTA_DIR="$DATA_DIR/probes/fasta"
